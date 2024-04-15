@@ -5,11 +5,11 @@
  *
  * File: ert_main.c
  *
- * Code generated for Simulink model 'roll'.
+ * Code generated for Simulink model 'roll_rate_Controller'.
  *
- * Model version                  : 1.33
+ * Model version                  : 1.44
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Apr 15 09:43:00 2024
+ * C/C++ source code generated on : Mon Apr 15 11:51:58 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Windows64)
@@ -19,7 +19,7 @@
 
 #include <stddef.h>
 #include <stdio.h>            /* This example main program uses printf/fflush */
-#include "roll.h"                      /* Model header file */
+#include "roll_rate_Controller.h"      /* Model header file */
 
 /*
  * Associating rt_OneStep with a real-time clock or interrupt service routine
@@ -41,7 +41,7 @@ void rt_OneStep(void)
 
   /* Check for overrun */
   if (OverrunFlag) {
-    rtmSetErrorStatus(roll_M, "Overrun");
+    rtmSetErrorStatus(roll_rate_Controller_M, "Overrun");
     return;
   }
 
@@ -52,7 +52,7 @@ void rt_OneStep(void)
   /* Set model inputs here */
 
   /* Step the model */
-  roll_step();
+  roll_rate_Controller_step();
 
   /* Get model outputs here */
 
@@ -77,10 +77,10 @@ int_T main(int_T argc, const char *argv[])
   (void)(argv);
 
   /* Initialize model */
-  roll_initialize();
+  roll_rate_Controller_initialize();
 
   /* Attach rt_OneStep to a timer or interrupt service routine with
-   * period 0.002 seconds (base rate of the model) here.
+   * period 0.01 seconds (base rate of the model) here.
    * The call syntax for rt_OneStep is
    *
    *  rt_OneStep();
@@ -89,12 +89,12 @@ int_T main(int_T argc, const char *argv[])
          "Generated ERT main won't simulate model step behavior. "
          "To change this behavior select the 'MAT-file logging' option.\n");
   fflush((NULL));
-  while (rtmGetErrorStatus(roll_M) == (NULL)) {
+  while (rtmGetErrorStatus(roll_rate_Controller_M) == (NULL)) {
     /*  Perform application tasks here */
   }
 
   /* Terminate model */
-  roll_terminate();
+  roll_rate_Controller_terminate();
   return 0;
 }
 

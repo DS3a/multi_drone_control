@@ -1,13 +1,13 @@
 <html>
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" href="rtwreport.css" /><script language="JavaScript" type="text/javascript">function rtwTableShrink(o) {var t = o.nextSibling;if (t.nodeType != 1) {t = t.nextSibling;}if (t.style.display == "none") {t.style.display = "";o.innerHTML = "[-]"} else {t.style.display = "none";o.innerHTML = "[+] ... "}}</script><script>function postParentWindowMessage(message) {window.parent.postMessage(message, "*");}</script><meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /><title>
-Code Interface Report for roll
+Code Interface Report for roll_rate_Controller
 </title>
 
 </head>
 <body>
 <h1>
-Code Interface Report for roll
+Code Interface Report for roll_rate_Controller
 </h1>
 <h3>
 Table of Contents
@@ -52,7 +52,7 @@ Entry-Point Functions
 
 </h3>
 <p>
-Function: <a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_initialize'})">roll_initialize</a>
+Function: <a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_rate_Controller_initialize'})">roll_rate_Controller_initialize</a>
 </p>
 <table width="100%" class="AltRow" cellspacing="0">
 <tr class="even">
@@ -61,7 +61,7 @@ Prototype
 </td>
 <td width="75%" align="left" valign="top">
 <b>
-void roll_initialize(void)
+void roll_rate_Controller_initialize(void)
 </b>
 
 </td>
@@ -108,14 +108,14 @@ None
 Header file
 </td>
 <td width="75%" align="left" valign="top">
-<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll.h'})">roll.h</a>
+<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_rate_Controller.h'})">roll_rate_Controller.h</a>
 </td>
 
 </tr>
 
 </table>
 <p>
-Function: <a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_step'})">roll_step</a>
+Function: <a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_rate_Controller_step'})">roll_rate_Controller_step</a>
 </p>
 <table width="100%" class="AltRow" cellspacing="0">
 <tr class="even">
@@ -124,7 +124,7 @@ Prototype
 </td>
 <td width="75%" align="left" valign="top">
 <b>
-void roll_step(void)
+void roll_rate_Controller_step(void)
 </b>
 
 </td>
@@ -144,7 +144,7 @@ Output entry point of generated code
 Timing
 </td>
 <td width="75%" align="left" valign="top">
-Must be called periodically, every 0.002 seconds
+Must be called periodically, every 0.01 seconds
 </td>
 
 </tr>
@@ -171,14 +171,14 @@ None
 Header file
 </td>
 <td width="75%" align="left" valign="top">
-<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll.h'})">roll.h</a>
+<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_rate_Controller.h'})">roll_rate_Controller.h</a>
 </td>
 
 </tr>
 
 </table>
 <p>
-Function: <a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_terminate'})">roll_terminate</a>
+Function: <a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_rate_Controller_terminate'})">roll_rate_Controller_terminate</a>
 </p>
 <table width="100%" class="AltRow" cellspacing="0">
 <tr class="even">
@@ -187,7 +187,7 @@ Prototype
 </td>
 <td width="75%" align="left" valign="top">
 <b>
-void roll_terminate(void)
+void roll_rate_Controller_terminate(void)
 </b>
 
 </td>
@@ -234,7 +234,7 @@ None
 Header file
 </td>
 <td width="75%" align="left" valign="top">
-<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll.h'})">roll.h</a>
+<a href="javascript: void(0)" onclick="postParentWindowMessage({message:'jumpToCode',location:'roll_rate_Controller.h'})">roll_rate_Controller.h</a>
 </td>
 
 </tr>
@@ -276,10 +276,10 @@ Dimension
 </tr>
 <tr class="even">
 <td width="42%" align="left" valign="top">
-&lt;S7&gt;/u
+&lt;S11&gt;/u
 </td>
 <td width="26%" align="left" valign="top">
-roll_U.u
+roll_rate_Controller_U.u
 </td>
 <td width="21%" align="left" valign="top">
 real_T
@@ -327,10 +327,10 @@ Dimension
 </tr>
 <tr class="even">
 <td width="42%" align="left" valign="top">
-&lt;S7&gt;/y
+&lt;S11&gt;/y
 </td>
 <td width="26%" align="left" valign="top">
-roll_Y.y
+roll_rate_Controller_Y.y
 </td>
 <td width="21%" align="left" valign="top">
 real_T

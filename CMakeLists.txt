@@ -16,8 +16,9 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
 )
 
-add_library(roll_rate_controller include/roll_ert_rtw/roll.c)
+add_library(roll_rate_controller include/roll_rate_Controller_ert_rtw/roll_rate_Controller.cpp)
 
+add_library(pitch_rate_controller include/pitch_rate_Controller_ert_rtw/pitch_rate_Controller.cpp)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -218,4 +219,4 @@ add_executable(torque_thrust_controller_node src/torque_thrust_control.cpp)
 target_link_libraries(torque_thrust_controller_node ${catkin_LIBRARIES})
 
 add_executable(rate_thrust_controller_node src/rate_thrust_control.cpp)
-target_link_libraries(rate_thrust_controller_node roll_rate_controller ${catkin_LIBRARIES})
+target_link_libraries(rate_thrust_controller_node roll_rate_controller pitch_rate_controller ${catkin_LIBRARIES})

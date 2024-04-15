@@ -5,11 +5,11 @@
  *
  * File: rtwtypes.h
  *
- * Code generated for Simulink model 'roll'.
+ * Code generated for Simulink model 'roll_rate_Controller'.
  *
- * Model version                  : 1.33
+ * Model version                  : 1.44
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Apr 15 09:43:00 2024
+ * C/C++ source code generated on : Mon Apr 15 11:51:58 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Windows64)

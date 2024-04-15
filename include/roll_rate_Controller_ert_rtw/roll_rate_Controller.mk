@@ -1,9 +1,9 @@
 ###########################################################################
-## Makefile generated for component 'roll'. 
+## Makefile generated for component 'roll_rate_Controller'. 
 ## 
-## Makefile     : roll.mk
-## Generated on : Mon Apr 15 09:43:10 2024
-## Final product: $(RELATIVE_PATH_TO_ANCHOR)/roll.exe
+## Makefile     : roll_rate_Controller.mk
+## Generated on : Mon Apr 15 11:52:08 2024
+## Final product: $(RELATIVE_PATH_TO_ANCHOR)/roll_rate_Controller.exe
 ## Product type : executable
 ## 
 ###########################################################################
@@ -18,8 +18,8 @@
 # COMPILER_COMMAND_FILE   Compiler command listing model reference header paths
 # CMD_FILE                Command file
 
-PRODUCT_NAME              = roll
-MAKEFILE                  = roll.mk
+PRODUCT_NAME              = roll_rate_Controller
+MAKEFILE                  = roll_rate_Controller.mk
 MATLAB_ROOT               = C:/PROGRA~1/MATLAB/R2022b
 MATLAB_BIN                = C:/PROGRA~1/MATLAB/R2022b/bin
 MATLAB_ARCH_BIN           = $(MATLAB_BIN)/win64
@@ -30,8 +30,8 @@ CLASSIC_INTERFACE         = 0
 TGT_FCN_LIB               = ISO_C
 MODEL_HAS_DYNAMICALLY_LOADED_SFCNS = 0
 RELATIVE_PATH_TO_ANCHOR   = ..
-COMPILER_COMMAND_FILE     = roll_comp.rsp
-CMD_FILE                  = roll.rsp
+COMPILER_COMMAND_FILE     = roll_rate_Controller_comp.rsp
+CMD_FILE                  = roll_rate_Controller.rsp
 C_STANDARD_OPTS           = -fwrapv
 CPP_STANDARD_OPTS         = -fwrapv
 
@@ -156,7 +156,7 @@ SHAREDLIB_LDFLAGS    = -shared -Wl,--no-undefined \
 ## OUTPUT INFO
 ###########################################################################
 
-PRODUCT = $(RELATIVE_PATH_TO_ANCHOR)/roll.exe
+PRODUCT = $(RELATIVE_PATH_TO_ANCHOR)/roll_rate_Controller.exe
 PRODUCT_TYPE = "executable"
 BUILD_TYPE = "Top-Level Standalone Executable"
 
@@ -175,7 +175,7 @@ INCLUDES = $(INCLUDES_BUILDINFO)
 DEFINES_BUILD_ARGS = -DCLASSIC_INTERFACE=0 -DALLOCATIONFCN=0 -DTERMFCN=1 -DONESTEPFCN=1 -DMAT_FILE=0 -DMULTI_INSTANCE_CODE=0 -DINTEGER_CODE=0 -DMT=0
 DEFINES_CUSTOM = 
 DEFINES_OPTS = -DTID01EQ=0
-DEFINES_STANDARD = -DMODEL=roll -DNUMST=1 -DNCSTATES=0 -DHAVESTDIO -DMODEL_HAS_DYNAMICALLY_LOADED_SFCNS=0
+DEFINES_STANDARD = -DMODEL=roll_rate_Controller -DNUMST=1 -DNCSTATES=0 -DHAVESTDIO -DMODEL_HAS_DYNAMICALLY_LOADED_SFCNS=0
 
 DEFINES = $(DEFINES_BUILD_ARGS) $(DEFINES_CUSTOM) $(DEFINES_OPTS) $(DEFINES_STANDARD)
 
@@ -183,9 +183,9 @@ DEFINES = $(DEFINES_BUILD_ARGS) $(DEFINES_CUSTOM) $(DEFINES_OPTS) $(DEFINES_STAN
 ## SOURCE FILES
 ###########################################################################
 
-SRCS = $(START_DIR)/roll_ert_rtw/roll.c
+SRCS = $(START_DIR)/roll_rate_Controller_ert_rtw/roll_rate_Controller.c
 
-MAIN_SRC = $(START_DIR)/roll_ert_rtw/ert_main.c
+MAIN_SRC = $(START_DIR)/roll_rate_Controller_ert_rtw/ert_main.c
 
 ALL_SRCS = $(SRCS) $(MAIN_SRC)
 
@@ -193,7 +193,7 @@ ALL_SRCS = $(SRCS) $(MAIN_SRC)
 ## OBJECTS
 ###########################################################################
 
-OBJS = roll.obj
+OBJS = roll_rate_Controller.obj
 
 MAIN_OBJ = ert_main.obj
 
@@ -339,11 +339,11 @@ $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS) $(MAIN_OBJ)
 	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-%.obj : $(START_DIR)/roll_ert_rtw/%.c
+%.obj : $(START_DIR)/roll_rate_Controller_ert_rtw/%.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-%.obj : $(START_DIR)/roll_ert_rtw/%.cpp
+%.obj : $(START_DIR)/roll_rate_Controller_ert_rtw/%.cpp
 	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
@@ -363,11 +363,11 @@ $(PRODUCT) : $(OBJS) $(PREBUILT_OBJS) $(MAIN_OBJ)
 	$(CPP) $(CPPFLAGS) -o "$@" "$<"
 
 
-ert_main.obj : $(START_DIR)/roll_ert_rtw/ert_main.c
+ert_main.obj : $(START_DIR)/roll_rate_Controller_ert_rtw/ert_main.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 
-roll.obj : $(START_DIR)/roll_ert_rtw/roll.c
+roll_rate_Controller.obj : $(START_DIR)/roll_rate_Controller_ert_rtw/roll_rate_Controller.c
 	$(CC) $(CFLAGS) -o "$@" "$<"
 
 

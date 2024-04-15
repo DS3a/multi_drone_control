@@ -6,7 +6,7 @@
 #include <memory.h>
 #include <math.h>
 #include <stdio.h>
-#include "roll_ert_rtw/roll.c"
+#include "roll_rate_Controller_ert_rtw/roll_rate_Controller.h"
 #include "pitch_rate_Controller_ert_rtw/pitch_rate_Controller.h"
 
 
@@ -51,7 +51,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
 
 
 int main(int argc, char **argv) {
-    cmd_thrust = std::make_shared<float>(0.0);
+    cmd_thrust = std::make_shared<float>(3.0);
     cmd_torque_x = std::make_shared<float>(0.0);
     cmd_torque_y = std::make_shared<float>(0.0);
     cmd_rate_x = std::make_shared<float>(0.0);
@@ -60,7 +60,8 @@ int main(int argc, char **argv) {
     roll_rate = std::make_shared<float>(0.0);
     pitch_rate = std::make_shared<float>(0.0);
 
-    roll_initialize();
+    roll_rate_Controller_initialize();
+    pitch_rate_Controller_initialize();
 
 
     ros::init(argc, argv, "rate_thrust_controller_node");
@@ -96,10 +97,25 @@ int main(int argc, char **argv) {
 ** INPUT cmd_rate_y - pitch_rate
 ** OUTPUT cmd_torque_y
  */
-        roll_U.u = *cmd_rate_x;
-        roll_step();
-        *cmd_torque_x = roll_Y.y;
-        printf("the roll command is %f\n", roll_Y.y);
+        roll_rate_Controller_U.u = (*cmd_rate_x) - (*roll_rate);
+        roll_rate_Controller_step();
+        if (std::isnan(roll_rate_Controller_Y.y)) {
+            *cmd_torque_x = 0;
+        } else {
+            *cmd_torque_x = roll_rate_Controller_Y.y;
+        }
+        printf("the roll command is %f\n", *cmd_torque_x);
+
+        pitch_rate_Controller_U.u = (*cmd_rate_y) - (*pitch_rate);
+        pitch_rate_Controller_step();
+
+        if (std::isnan(pitch_rate_Controller_Y.y)) {
+            *cmd_torque_y = 0;
+        }
+        else {
+          *cmd_torque_y = pitch_rate_Controller_Y.y;
+        }
+        printf("the pitch command is %f\n", *cmd_torque_y);
 
         motor_front_thrust = *cmd_thrust / 4;
         motor_back_thrust = *cmd_thrust / 4;
@@ -117,6 +133,12 @@ int main(int argc, char **argv) {
         motor_back_ang_vel = THRUST_TO_ANG_VEL(motor_back_thrust);
         motor_right_ang_vel = THRUST_TO_ANG_VEL(motor_right_thrust);
         motor_left_ang_vel = THRUST_TO_ANG_VEL(motor_left_thrust);
+
+        // if (std::isnan(motor_front_ang_vel)) motor_front_ang_vel = 0;
+        // if (std::isnan(motor_back_ang_vel)) motor_front_ang_vel = 0;
+        // if (std::isnan(motor_left_ang_vel)) motor_front_ang_vel = 0;
+        // if (std::isnan(motor_right_ang_vel)) motor_front_ang_vel = 0;
+
 
         mav_msgs::Actuators actuator_msg;
         // actuator_msg.angular_velocities.clear();
