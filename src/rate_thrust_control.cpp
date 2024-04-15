@@ -20,10 +20,16 @@
 #define ROTOR_RADIUS 0.1
 // radius of rotor in m
 
+
 #define MOTOR_CONSTANT 8.54858e-06
 // motor constant in kg m/s^2
 
 #define THRUST_TO_ANG_VEL(rotor_thrust) ((1/(ROTOR_RADIUS*SIM_SLOWDOWN_FACTOR))*sqrt(rotor_thrust/MOTOR_CONSTANT))
+
+
+#define MIN_ANG_VEL 1
+#define CHECK_MIN_ANG_VEL(value) ((value > MIN_ANG_VEL) ? value : MIN_ANG_VEL)
+
 
 
 std::shared_ptr<float> cmd_thrust;
@@ -51,7 +57,7 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
 
 
 int main(int argc, char **argv) {
-    cmd_thrust = std::make_shared<float>(3.0);
+    cmd_thrust = std::make_shared<float>(0.0);
     cmd_torque_x = std::make_shared<float>(0.0);
     cmd_torque_y = std::make_shared<float>(0.0);
     cmd_rate_x = std::make_shared<float>(0.0);
@@ -142,10 +148,10 @@ int main(int argc, char **argv) {
 
         mav_msgs::Actuators actuator_msg;
         // actuator_msg.angular_velocities.clear();
-        actuator_msg.angular_velocities.push_back(motor_front_ang_vel);
-        actuator_msg.angular_velocities.push_back(motor_left_ang_vel);
-        actuator_msg.angular_velocities.push_back(motor_back_ang_vel);
-        actuator_msg.angular_velocities.push_back(motor_right_ang_vel);
+        actuator_msg.angular_velocities.push_back(CHECK_MIN_ANG_VEL(motor_front_ang_vel));
+        actuator_msg.angular_velocities.push_back(CHECK_MIN_ANG_VEL(motor_left_ang_vel));
+        actuator_msg.angular_velocities.push_back(CHECK_MIN_ANG_VEL(motor_back_ang_vel));
+        actuator_msg.angular_velocities.push_back(CHECK_MIN_ANG_VEL(motor_right_ang_vel));
 
         motor_cmd_publisher.publish(actuator_msg);
 
