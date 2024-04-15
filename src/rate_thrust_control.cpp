@@ -1,0 +1,133 @@
+#include "ros/ros.h"
+#include "mav_msgs/Actuators.h"
+#include "multi_drone_control/torque_thrust_cmd.h"
+#include "multi_drone_control/rate_thrust_cmd.h"
+#include "sensor_msgs/Imu.h"
+#include <memory.h>
+#include <math.h>
+#include <stdio.h>
+#include "roll_ert_rtw/roll.c"
+#include "pitch_rate_Controller_ert_rtw/pitch_rate_Controller.h"
+
+
+//// PARAMETERS
+
+#define ARM_LENGTH 0.17
+// arm length in meters
+
+#define SIM_SLOWDOWN_FACTOR 10
+
+#define ROTOR_RADIUS 0.1
+// radius of rotor in m
+
+#define MOTOR_CONSTANT 8.54858e-06
+// motor constant in kg m/s^2
+
+#define THRUST_TO_ANG_VEL(rotor_thrust) ((1/(ROTOR_RADIUS*SIM_SLOWDOWN_FACTOR))*sqrt(rotor_thrust/MOTOR_CONSTANT))
+
+
+std::shared_ptr<float> cmd_thrust;
+std::shared_ptr<float> cmd_rate_x;
+std::shared_ptr<float> cmd_rate_y;
+std::shared_ptr<float> cmd_torque_x;
+std::shared_ptr<float> cmd_torque_y;
+
+std::shared_ptr<float> roll_rate;
+std::shared_ptr<float> pitch_rate;
+
+void cmd_callback(const multi_drone_control::rate_thrust_cmd::ConstPtr& msg) {
+    *cmd_thrust = msg->thrust.data;
+    *cmd_rate_x = msg->roll_rate.data;
+    *cmd_rate_y = msg->pitch_rate.data;
+
+    // *cmd_torque_x = msg->torque_x.data;
+    // *cmd_torque_y = msg->torque_y.data;
+}
+
+void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
+    *roll_rate = msg->angular_velocity.x;
+    *pitch_rate = msg->angular_velocity.y;
+}
+
+
+int main(int argc, char **argv) {
+    cmd_thrust = std::make_shared<float>(0.0);
+    cmd_torque_x = std::make_shared<float>(0.0);
+    cmd_torque_y = std::make_shared<float>(0.0);
+    cmd_rate_x = std::make_shared<float>(0.0);
+    cmd_rate_y = std::make_shared<float>(0.0);
+
+    roll_rate = std::make_shared<float>(0.0);
+    pitch_rate = std::make_shared<float>(0.0);
+
+    roll_initialize();
+
+
+    ros::init(argc, argv, "rate_thrust_controller_node");
+    ros::NodeHandle n;
+    std::string ns = ros::this_node::getNamespace();
+
+    ros::Publisher motor_cmd_publisher =
+        n.advertise<mav_msgs::Actuators>(ns+"/gazebo/command/motor_speed", 1);
+
+    ros::Subscriber sub = n.subscribe(ns+"/drone_cmd", 1, cmd_callback);
+    ros::Subscriber imu_sub = n.subscribe(ns+"/ground_truth/imu", 1, imu_callback);
+
+    ros::Rate cmd_publisher_rate(100);
+
+    float motor_front_ang_vel=0, motor_back_ang_vel=0,
+        motor_left_ang_vel=0, motor_right_ang_vel=0;
+
+    float motor_front_thrust=0, motor_back_thrust=0,
+        motor_left_thrust=0, motor_right_thrust;
+
+    while (ros::ok()) {
+        ros::spinOnce();
+
+/*
+**
+** TODO
+** use the pitch and roll pid to update the torque values
+**
+** INPUT cmd_rate_x - roll_rate
+** OUTPUT cmd_torque_x
+**
+**
+** INPUT cmd_rate_y - pitch_rate
+** OUTPUT cmd_torque_y
+ */
+        roll_U.u = *cmd_rate_x;
+        roll_step();
+        *cmd_torque_x = roll_Y.y;
+        printf("the roll command is %f\n", roll_Y.y);
+
+        motor_front_thrust = *cmd_thrust / 4;
+        motor_back_thrust = *cmd_thrust / 4;
+        motor_left_thrust = *cmd_thrust / 4;
+        motor_right_thrust = *cmd_thrust / 4;
+
+        motor_front_thrust -= (*cmd_torque_y) / (2 * ARM_LENGTH);
+        motor_back_thrust += (*cmd_torque_y) / (2 * ARM_LENGTH);
+
+        motor_left_thrust += (*cmd_torque_x) / (2 * ARM_LENGTH);
+        motor_right_thrust -= (*cmd_torque_x) / (2 * ARM_LENGTH);
+
+        // printf("motor right thrust %f\n", motor_right_thrust);
+        motor_front_ang_vel = THRUST_TO_ANG_VEL(motor_front_thrust);
+        motor_back_ang_vel = THRUST_TO_ANG_VEL(motor_back_thrust);
+        motor_right_ang_vel = THRUST_TO_ANG_VEL(motor_right_thrust);
+        motor_left_ang_vel = THRUST_TO_ANG_VEL(motor_left_thrust);
+
+        mav_msgs::Actuators actuator_msg;
+        // actuator_msg.angular_velocities.clear();
+        actuator_msg.angular_velocities.push_back(motor_front_ang_vel);
+        actuator_msg.angular_velocities.push_back(motor_left_ang_vel);
+        actuator_msg.angular_velocities.push_back(motor_back_ang_vel);
+        actuator_msg.angular_velocities.push_back(motor_right_ang_vel);
+
+        motor_cmd_publisher.publish(actuator_msg);
+
+        cmd_publisher_rate.sleep();
+    }
+    return 0;
+}

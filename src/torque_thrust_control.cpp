@@ -5,6 +5,7 @@
 #include <math.h>
 #include <stdio.h>
 
+
 //// PARAMETERS
 
 #define ARM_LENGTH 0.17

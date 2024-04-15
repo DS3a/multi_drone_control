@@ -8,12 +8,16 @@ project(multi_drone_control)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  sensor_msgs
   mav_msgs
   roscpp
   rospy
   std_msgs
   message_generation
 )
+
+add_library(roll_rate_controller include/roll_ert_rtw/roll.c)
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -212,3 +216,6 @@ include_directories(
 # catkin_add_nosetests(test)
 add_executable(torque_thrust_controller_node src/torque_thrust_control.cpp)
 target_link_libraries(torque_thrust_controller_node ${catkin_LIBRARIES})
+
+add_executable(rate_thrust_controller_node src/rate_thrust_control.cpp)
+target_link_libraries(rate_thrust_controller_node roll_rate_controller ${catkin_LIBRARIES})
