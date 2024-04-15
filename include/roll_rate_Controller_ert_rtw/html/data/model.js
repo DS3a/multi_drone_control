@@ -1,1 +1,0 @@
-var modelInfo = {model:"roll_rate_Controller"};var modelHierarchy=[{model:"roll_rate_Controller",relativePath:"_internal.html",parent:"null"},];
