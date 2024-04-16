@@ -220,3 +220,8 @@ target_link_libraries(torque_thrust_controller_node ${catkin_LIBRARIES})
 
 add_executable(rate_thrust_controller_node src/rate_thrust_control.cpp)
 target_link_libraries(rate_thrust_controller_node roll_rate_controller pitch_rate_controller ${catkin_LIBRARIES})
+
+
+catkin_install_python(PROGRAMS scripts/single_drone_hocbf.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

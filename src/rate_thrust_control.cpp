@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
     std::string ns = ros::this_node::getNamespace();
 
     ros::Publisher motor_cmd_publisher =
-        n.advertise<mav_msgs::Actuators>(ns+"/gazebo/command/motor_speed", 1);
+        n.advertise<mav_msgs::Actuators>(ns+"/command/motor_speed", 1);
 
     ros::Subscriber sub = n.subscribe(ns+"/drone_cmd", 1, cmd_callback);
     ros::Subscriber imu_sub = n.subscribe(ns+"/ground_truth/imu", 1, imu_callback);
