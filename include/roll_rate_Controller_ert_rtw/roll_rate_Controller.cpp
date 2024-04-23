@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'roll_rate_Controller'.
  *
- * Model version                  : 1.44
+ * Model version                  : 1.57
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Apr 15 11:51:58 2024
+ * C/C++ source code generated on : Tue Apr 23 06:45:31 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Windows64)
@@ -42,14 +42,14 @@ void roll_rate_Controller_step(void)
    *  Inport: '<Root>/u'
    *  Sum: '<S42>/Sum'
    */
-  roll_rate_Controller_Y.y = 0.346681431619102 * roll_rate_Controller_U.u +
+  roll_rate_Controller_Y.y = 0.141613583408204 * roll_rate_Controller_U.u +
     roll_rate_Controller_DW.Integrator_DSTATE;
 
   /* Update for DiscreteIntegrator: '<S33>/Integrator' incorporates:
    *  Gain: '<S30>/Integral Gain'
    *  Inport: '<Root>/u'
    */
-  roll_rate_Controller_DW.Integrator_DSTATE += 0.288862702163413 *
+  roll_rate_Controller_DW.Integrator_DSTATE += 0.049648526279347 *
     roll_rate_Controller_U.u * 0.01;
 }
 

@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'pitch_rate_Controller'.
  *
- * Model version                  : 1.44
+ * Model version                  : 1.57
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Apr 15 11:52:37 2024
+ * C/C++ source code generated on : Tue Apr 23 06:46:41 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Windows64)
@@ -42,14 +42,14 @@ void pitch_rate_Controller_step(void)
    *  Inport: '<Root>/u'
    *  Sum: '<S42>/Sum'
    */
-  pitch_rate_Controller_Y.y = 0.346841783263699 * pitch_rate_Controller_U.u +
+  pitch_rate_Controller_Y.y = 0.141608364596746 * pitch_rate_Controller_U.u +
     pitch_rate_Controller_DW.Integrator_DSTATE;
 
   /* Update for DiscreteIntegrator: '<S33>/Integrator' incorporates:
    *  Gain: '<S30>/Integral Gain'
    *  Inport: '<Root>/u'
    */
-  pitch_rate_Controller_DW.Integrator_DSTATE += 0.289135541287304 *
+  pitch_rate_Controller_DW.Integrator_DSTATE += 0.0496466966081293 *
     pitch_rate_Controller_U.u * 0.01;
 }
 

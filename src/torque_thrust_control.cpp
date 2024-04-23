@@ -19,17 +19,21 @@
 #define MOTOR_CONSTANT 8.54858e-06
 // motor constant in kg m/s^2
 
+#define MOMENT_CONSTANT 0.016
+
 #define THRUST_TO_ANG_VEL(rotor_thrust) ((1/(ROTOR_RADIUS*SIM_SLOWDOWN_FACTOR))*sqrt(rotor_thrust/MOTOR_CONSTANT))
 
 
 std::shared_ptr<float> cmd_thrust;
 std::shared_ptr<float> cmd_torque_x;
 std::shared_ptr<float> cmd_torque_y;
+std::shared_ptr<float> cmd_torque_z;
 
 void cmd_callback(const multi_drone_control::torque_thrust_cmd::ConstPtr& msg) {
     *cmd_thrust = msg->thrust.data;
     *cmd_torque_x = msg->torque_x.data;
     *cmd_torque_y = msg->torque_y.data;
+    *cmd_torque_z = msg->torque_z.data;
 }
 
 
@@ -37,6 +41,7 @@ int main(int argc, char **argv) {
     cmd_thrust = std::make_shared<float>(0.0);
     cmd_torque_x = std::make_shared<float>(0.0);
     cmd_torque_y = std::make_shared<float>(0.0);
+    cmd_torque_z = std::make_shared<float>(0.0);
 
 
     ros::init(argc, argv, "torque_thrust_controller_node");
@@ -68,6 +73,14 @@ int main(int argc, char **argv) {
 
         motor_left_thrust += (*cmd_torque_x) / (2 * ARM_LENGTH);
         motor_right_thrust -= (*cmd_torque_x) / (2 * ARM_LENGTH);
+
+        // (*cmd_torque_z) *= 1.5;
+
+        motor_front_thrust += (*cmd_torque_z) / (MOMENT_CONSTANT*4);
+        motor_back_thrust += (*cmd_torque_z) / (MOMENT_CONSTANT*4);
+
+        motor_left_thrust -= (*cmd_torque_z) / (MOMENT_CONSTANT*4);
+        motor_right_thrust -= (*cmd_torque_z) / (MOMENT_CONSTANT*4);
 
         // printf("motor right thrust %f\n", motor_right_thrust);
         motor_front_ang_vel = THRUST_TO_ANG_VEL(motor_front_thrust);

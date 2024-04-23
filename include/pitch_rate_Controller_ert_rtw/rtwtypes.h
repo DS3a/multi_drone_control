@@ -7,9 +7,9 @@
  *
  * Code generated for Simulink model 'pitch_rate_Controller'.
  *
- * Model version                  : 1.44
+ * Model version                  : 1.57
  * Simulink Coder version         : 9.8 (R2022b) 13-May-2022
- * C/C++ source code generated on : Mon Apr 15 11:52:37 2024
+ * C/C++ source code generated on : Tue Apr 23 06:46:41 2024
  *
  * Target selection: ert.tlc
  * Embedded hardware selection: Intel->x86-64 (Windows64)

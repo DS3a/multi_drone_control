@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include "roll_rate_Controller_ert_rtw/roll_rate_Controller.h"
 #include "pitch_rate_Controller_ert_rtw/pitch_rate_Controller.h"
+#include "yaw_rate_Controller_ert_rtw/yaw_rate_Controller.h"
 
 
 //// PARAMETERS
@@ -24,6 +25,9 @@
 #define MOTOR_CONSTANT 8.54858e-06
 // motor constant in kg m/s^2
 
+
+#define MOMENT_CONSTANT 0.016
+
 #define THRUST_TO_ANG_VEL(rotor_thrust) ((1/(ROTOR_RADIUS*SIM_SLOWDOWN_FACTOR))*sqrt(rotor_thrust/MOTOR_CONSTANT))
 
 
@@ -35,16 +39,20 @@
 std::shared_ptr<float> cmd_thrust;
 std::shared_ptr<float> cmd_rate_x;
 std::shared_ptr<float> cmd_rate_y;
+std::shared_ptr<float> cmd_rate_z;
 std::shared_ptr<float> cmd_torque_x;
 std::shared_ptr<float> cmd_torque_y;
+std::shared_ptr<float> cmd_torque_z;
 
 std::shared_ptr<float> roll_rate;
 std::shared_ptr<float> pitch_rate;
+std::shared_ptr<float> yaw_rate;
 
 void cmd_callback(const multi_drone_control::rate_thrust_cmd::ConstPtr& msg) {
     *cmd_thrust = msg->thrust.data;
     *cmd_rate_x = msg->roll_rate.data;
     *cmd_rate_y = msg->pitch_rate.data;
+    *cmd_rate_z = msg->yaw_rate.data;
 
     // *cmd_torque_x = msg->torque_x.data;
     // *cmd_torque_y = msg->torque_y.data;
@@ -53,6 +61,7 @@ void cmd_callback(const multi_drone_control::rate_thrust_cmd::ConstPtr& msg) {
 void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     *roll_rate = msg->angular_velocity.x;
     *pitch_rate = msg->angular_velocity.y;
+    *yaw_rate = msg->angular_velocity.z;
 }
 
 
@@ -60,14 +69,18 @@ int main(int argc, char **argv) {
     cmd_thrust = std::make_shared<float>(0.0);
     cmd_torque_x = std::make_shared<float>(0.0);
     cmd_torque_y = std::make_shared<float>(0.0);
+    cmd_torque_z = std::make_shared<float>(0.0);
     cmd_rate_x = std::make_shared<float>(0.0);
     cmd_rate_y = std::make_shared<float>(0.0);
+    cmd_rate_z = std::make_shared<float>(0.0);
 
     roll_rate = std::make_shared<float>(0.0);
     pitch_rate = std::make_shared<float>(0.0);
+    yaw_rate = std::make_shared<float>(0.0);
 
     roll_rate_Controller_initialize();
     pitch_rate_Controller_initialize();
+    yaw_rate_Controller_initialize();
 
 
     ros::init(argc, argv, "rate_thrust_controller_node");
@@ -123,6 +136,17 @@ int main(int argc, char **argv) {
         }
         printf("the pitch command is %f\n", *cmd_torque_y);
 
+        yaw_rate_Controller_U.u = (*cmd_rate_z) - (*yaw_rate);
+        yaw_rate_Controller_step();
+        if (std::isnan(yaw_rate_Controller_Y.y)) {
+            *cmd_torque_z = 0;
+        }
+        else {
+          *cmd_torque_z = yaw_rate_Controller_Y.y;
+        }
+        printf("the yaw command is %f\n", *cmd_torque_z);
+
+
         motor_front_thrust = *cmd_thrust / 4;
         motor_back_thrust = *cmd_thrust / 4;
         motor_left_thrust = *cmd_thrust / 4;
@@ -133,6 +157,15 @@ int main(int argc, char **argv) {
 
         motor_left_thrust += (*cmd_torque_x) / (2 * ARM_LENGTH);
         motor_right_thrust -= (*cmd_torque_x) / (2 * ARM_LENGTH);
+
+
+        motor_front_thrust += (*cmd_torque_z) / (MOMENT_CONSTANT*4);
+        motor_back_thrust += (*cmd_torque_z) / (MOMENT_CONSTANT*4);
+
+        motor_left_thrust -= (*cmd_torque_z) / (MOMENT_CONSTANT*4);
+        motor_right_thrust -= (*cmd_torque_z) / (MOMENT_CONSTANT*4);
+
+
 
         // printf("motor right thrust %f\n", motor_right_thrust);
         motor_front_ang_vel = THRUST_TO_ANG_VEL(motor_front_thrust);

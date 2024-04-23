@@ -13,12 +13,23 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  Eigen3
   message_generation
 )
 
 add_library(roll_rate_controller include/roll_rate_Controller_ert_rtw/roll_rate_Controller.cpp)
 
 add_library(pitch_rate_controller include/pitch_rate_Controller_ert_rtw/pitch_rate_Controller.cpp)
+
+add_library(yaw_rate_controller include/yaw_rate_Controller_ert_rtw/yaw_rate_Controller.cpp)
+
+
+add_library(roll_controller include/roll_pid_ert_rtw/roll_pid.cpp)
+
+add_library(pitch_controller include/pitch_pid_ert_rtw/pitch_pid.cpp)
+
+add_library(yaw_controller include/yaw_pid_ert_rtw/yaw_pid.cpp)
+
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -58,6 +69,7 @@ add_message_files(
   FILES
   torque_thrust_cmd.msg
   rate_thrust_cmd.msg
+  attitude_thrust_cmd.msg
 )
 
 ## Generate services in the 'srv' folder
@@ -128,6 +140,7 @@ catkin_package(
 ## Your package locations should be listed before other locations
 include_directories(
   include
+  ${Eigen3_INCLUDE_DIR}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -219,8 +232,22 @@ add_executable(torque_thrust_controller_node src/torque_thrust_control.cpp)
 target_link_libraries(torque_thrust_controller_node ${catkin_LIBRARIES})
 
 add_executable(rate_thrust_controller_node src/rate_thrust_control.cpp)
-target_link_libraries(rate_thrust_controller_node roll_rate_controller pitch_rate_controller ${catkin_LIBRARIES})
+target_link_libraries(rate_thrust_controller_node
+  roll_rate_controller
+  pitch_rate_controller
+  yaw_rate_controller
+  ${catkin_LIBRARIES})
 
+add_executable(attitude_thrust_controller_node src/attitude_thrust_control.cpp)
+target_link_libraries(attitude_thrust_controller_node
+  roll_rate_controller
+  pitch_rate_controller
+  yaw_rate_controller
+  roll_controller
+  pitch_controller
+  yaw_controller
+  ${Eigen3_LIBRARIES}
+  ${catkin_LIBRARIES})
 
 catkin_install_python(PROGRAMS scripts/single_drone_hocbf.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
