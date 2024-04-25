@@ -65,17 +65,14 @@ std::shared_ptr<float> eul_yaw;
 std::shared_ptr<float> eul_pitch;
 std::shared_ptr<float> eul_roll;
 
+
+Eigen::Vector3d ToEulerAngles(const Eigen::Quaterniond& q);
+
 void cmd_callback(const multi_drone_control::attitude_thrust_cmd::ConstPtr& msg) {
     *cmd_thrust = msg->thrust.data;
     *cmd_yaw = msg->yaw.data;
     *cmd_pitch = msg->pitch.data;
     *cmd_roll = msg->roll.data;
-    // *cmd_rate_x = msg->roll_rate.data;
-    // *cmd_rate_y = msg->pitch_rate.data;
-    // *cmd_rate_z = msg->yaw_rate.data;
-
-    // *cmd_torque_x = msg->torque_x.data;
-    // *cmd_torque_y = msg->torque_y.data;
 }
 
 void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
@@ -89,10 +86,15 @@ void imu_callback(const sensor_msgs::Imu::ConstPtr& msg) {
     q.y() = msg->orientation.y;
     q.z() = msg->orientation.z;
 
-    auto eul = q.toRotationMatrix().eulerAngles(2, 1, 0);
-    eul_yaw = eul[0];
-    eul_pitch = eul[1];
-    eul_roll = eul[2];
+    // Eigen::Vector3d eul = q.toRotationMatrix().eulerAngles(2, 1, 0);
+    Eigen::Vector3d eul = ToEulerAngles(q);
+    *eul_yaw = eul[0];
+    *eul_pitch = eul[1];
+    *eul_roll = eul[2];
+
+    // for some reason eigen did not get the domain of yaw right, so this had to be done manually
+    // *eul_yaw = std::atan2(2 * ((q.w() * q.z()) + (q.x() * q.y())),
+    //                       1 - 2 * ((q.y() * q.y()) + (q.z() * q.z())));
 }
 
 
@@ -104,6 +106,15 @@ int main(int argc, char **argv) {
     cmd_rate_x = std::make_shared<float>(0.0);
     cmd_rate_y = std::make_shared<float>(0.0);
     cmd_rate_z = std::make_shared<float>(0.0);
+
+    cmd_roll = std::make_shared<float>(0.0);
+    cmd_pitch = std::make_shared<float>(0.0);
+    cmd_yaw = std::make_shared<float>(0.0);
+
+
+    eul_roll = std::make_shared<float>(0.0);
+    eul_pitch = std::make_shared<float>(0.0);
+    eul_yaw = std::make_shared<float>(0.0);
 
     roll_rate = std::make_shared<float>(0.0);
     pitch_rate = std::make_shared<float>(0.0);
@@ -137,6 +148,17 @@ int main(int argc, char **argv) {
     while (ros::ok()) {
         ros::spinOnce();
 
+        roll_pid_U.u = (*cmd_roll) - (*eul_roll);
+        roll_pid_step();
+        if (std::isnan(roll_pid_Y.y)) {
+            *cmd_rate_x = 0;
+        } else {
+            *cmd_rate_x = roll_pid_Y.y;
+        }
+
+        // *cmd_rate_x = 0;
+        printf("the roll error is %f\n", *eul_roll);
+
         roll_rate_Controller_U.u = (*cmd_rate_x) - (*roll_rate);
         roll_rate_Controller_step();
         if (std::isnan(roll_rate_Controller_Y.y)) {
@@ -144,19 +166,40 @@ int main(int argc, char **argv) {
         } else {
             *cmd_torque_x = roll_rate_Controller_Y.y;
         }
-        printf("the roll command is %f\n", *cmd_torque_x);
+        // printf("the roll command is %f\n", *cmd_torque_x);
 
+
+        pitch_pid_U.u = (*cmd_pitch) - (*eul_pitch);
+        pitch_pid_step();
+        if (std::isnan(pitch_pid_Y.y)) {
+            *cmd_rate_y = 0;
+        } else {
+            *cmd_rate_y = pitch_pid_Y.y;
+        }
+
+        // *cmd_rate_y = 0;
+        printf("the pitch error is %f\n", *eul_pitch);
         pitch_rate_Controller_U.u = (*cmd_rate_y) - (*pitch_rate);
         pitch_rate_Controller_step();
-
         if (std::isnan(pitch_rate_Controller_Y.y)) {
             *cmd_torque_y = 0;
         }
         else {
           *cmd_torque_y = pitch_rate_Controller_Y.y;
         }
-        printf("the pitch command is %f\n", *cmd_torque_y);
+        // printf("the pitch command is %f\n", *cmd_torque_y);
 
+
+        yaw_pid_U.u = (*cmd_yaw) - (*eul_yaw);
+        yaw_pid_step();
+        if (std::isnan(yaw_pid_Y.y)) {
+            *cmd_rate_z = 0;
+        } else {
+            *cmd_rate_z = yaw_pid_Y.y;
+        }
+
+        // *cmd_rate_z = 0.4;
+        printf("the yaw error is %f\n", *eul_yaw);
         yaw_rate_Controller_U.u = (*cmd_rate_z) - (*yaw_rate);
         yaw_rate_Controller_step();
         if (std::isnan(yaw_rate_Controller_Y.y)) {
@@ -165,7 +208,7 @@ int main(int argc, char **argv) {
         else {
           *cmd_torque_z = yaw_rate_Controller_Y.y;
         }
-        printf("the yaw command is %f\n", *cmd_torque_z);
+        // printf("the yaw command is %f\n", *cmd_torque_z);
 
 
         motor_front_thrust = *cmd_thrust / 4;
@@ -212,4 +255,31 @@ int main(int argc, char **argv) {
         cmd_publisher_rate.sleep();
     }
     return 0;
+}
+
+
+Eigen::Vector3d ToEulerAngles(const Eigen::Quaterniond& q) {
+    Eigen::Vector3d angles;    //yaw pitch roll
+    const auto x = q.x();
+    const auto y = q.y();
+    const auto z = q.z();
+    const auto w = q.w();
+
+    // roll (x-axis rotation)
+    double sinr_cosp = 2 * (w * x + y * z);
+    double cosr_cosp = 1 - 2 * (x * x + y * y);
+    angles[2] = std::atan2(sinr_cosp, cosr_cosp);
+
+    // pitch (y-axis rotation)
+    double sinp = 2 * (w * y - z * x);
+    if (std::abs(sinp) >= 1)
+        angles[1] = std::copysign(M_PI / 2, sinp); // use 90 degrees if out of range
+    else
+        angles[1] = std::asin(sinp);
+
+    // yaw (z-axis rotation)
+    double siny_cosp = 2 * (w * z + x * y);
+    double cosy_cosp = 1 - 2 * (y * y + z * z);
+    angles[0] = std::atan2(siny_cosp, cosy_cosp);
+    return angles;
 }
