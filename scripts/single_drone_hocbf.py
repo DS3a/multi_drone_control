@@ -77,10 +77,16 @@ def Lf(barrier_fn, order=1):
 
 
 t = sp.symbols("t")  # symbol for time
-dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([2, 2, 2])))
+dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([-2, -5, 2])))
 # b1 = (50.1 - (50/14)*t) - sp.sqrt(dist.dot(dist))
-b1 = 3*sp.exp(-t/18) + 0.1 - sp.sqrt(dist.dot(dist))
-b2 = (347.93*sp.exp(-0.418*t) + 2) - sp.sqrt(dist.dot(dist))
+b1 = 7*sp.exp(-t/5) + 0.1 - sp.sqrt(dist.dot(dist))
+b2 = (347.93*sp.exp(-t/2.39) + 2) - sp.sqrt(dist.dot(dist))
+b2 = (347.93*sp.exp(-t/5) + 2) - sp.sqrt(dist.dot(dist))
+
+dist2 = (sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([-1, -2, 3]))
+# b2 = (347.93*sp.exp(-t/4) + 2) - sp.sqrt(dist.dot(dist2))
+b3 = (2 + 400*sp.exp(-t/8)) - sp.sqrt(dist2.dot(dist2))
+b = -sp.ln(sp.exp(-b1) + sp.exp(-b2) + sp.exp(-b3))
 b = -sp.ln(sp.exp(-b1) + sp.exp(-b2))
 # b = b1
 
@@ -151,7 +157,7 @@ def main():
     P = np.eye(3)
     Q = np.array([0., 0., 0.], dtype=float).reshape((3,))
 
-    alpha = 0.9
+    alpha = 0.99
     lhs_ax = -lie_derivative(lie_derivative(b, f, 1), g.col(0))
     lhs_ay = -lie_derivative(lie_derivative(b, f, 1), g.col(1))
     lhs_az = -lie_derivative(lie_derivative(b, f, 1), g.col(2))
@@ -222,10 +228,10 @@ def main():
                       [0, 0, eval_expr(lhs_b_v_z_max_az)],  # v_z_max constraint
                       [0, 0, eval_expr(lhs_b_v_z_min_az)]], dtype=float)  # v_z min constraint
 
-        print("rhs of hocbf is ", eval_expr(rhs, time_now))
+        # print("rhs of hocbf is ", eval_expr(rhs, time_now))
 
         delta = 0.5
-        h = np.array([[eval_expr(rhs, time_now)+2],    #  ], dtype=float)  # HOCBF constraint
+        h = np.array([[eval_expr(rhs, time_now)],    #  ], dtype=float)  # HOCBF constraint
                       [eval_expr(rhs_b_roll_max)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_pitch_max)+delta],  # ], dtype=float)  # pitch angle constraint
@@ -233,6 +239,7 @@ def main():
                       [eval_expr(rhs_b_v_z_max)],  # v_z_max constraint
                       [eval_expr(rhs_b_v_z_min)]], dtype=float)  # v_z_min constraint
 
+        solvers.options['show_progress'] = False
         sol = solvers.qp(matrix(P), matrix(Q), matrix(G), matrix(h))
 
         lpf_const = 0.1
@@ -277,7 +284,7 @@ def main():
         cmd_msg.yaw.data = angles[0]
         cmd_msg.pitch.data = angles[1]
         cmd_msg.roll.data = angles[2]
-        print(f"the solution is {f_t, angles}")
+        print(f"the solution is {f_t, angles} at time {int(time_now)}")
 
         pub.publish(cmd_msg)
 
