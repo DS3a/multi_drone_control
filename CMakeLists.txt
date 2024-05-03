@@ -252,3 +252,7 @@ target_link_libraries(attitude_thrust_controller_node
 catkin_install_python(PROGRAMS scripts/single_drone_hocbf.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+catkin_install_python(PROGRAMS scripts/four_drone_hocbf.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

@@ -4,17 +4,24 @@ import rospy
 import sympy as sp
 import numpy as np
 from cvxopt import solvers, matrix
+from scipy.spatial.transform import Rotation
 import time
 
 from nav_msgs.msg import Odometry
 from multi_drone_control.msg import attitude_thrust_cmd
-from scipy.spatial.transform import Rotation
+from geometry_msgs.msg import Vector3
+
 
 # Constants
 mass_drone = 0.825
 mass_rotor = 0.009
 
 m_T = mass_drone + 4*mass_rotor
+N = 4  # number of drones
+
+mass_payload = 1.0 / N
+mass_holder = 0.05
+m_T += mass_payload + mass_holder
 
 ### State space of the system
 
@@ -92,16 +99,9 @@ b = -sp.ln(sp.exp(-b1) + sp.exp(-b2))
 
 # barrier functions to enforce velocity constraints
 nu_max = 0.8  # max amplitude of pitch or roll can be 0.3 radians
-# b_pitch_max = nu_max - sp.atan(v_x / v_z)
-# b_pitch_min = nu_max + sp.atan(v_x / v_z)
 
 b_pitch_max = nu_max - v_x
 b_pitch_min = nu_max + v_x
-
-
-# b_roll_max = nu_max - sp.atan(v_y / v_z)
-# b_roll_min = nu_max + sp.atan(v_y / v_z)
-
 
 b_roll_max = nu_max - v_y
 b_roll_min = nu_max + v_y
@@ -143,16 +143,17 @@ def eval_expr(e, t_actual=0):
 
 def main():
     global pos_x, pos_y, pos_z, vel_x, vel_y, vel_z
-    pub = rospy.Publisher('/hummingbird0/drone_cmd', attitude_thrust_cmd,
-                          queue_size=10)
-    _ = rospy.Subscriber("/hummingbird0/ground_truth/odometry",
+    pub = rospy.Publisher('/payload/thrust_vector', Vector3,
+                          queue_size=3)
+    _ = rospy.Subscriber("/payload/ground_truth/odometry",
                          Odometry, odom_callback)
-    rospy.init_node('drone_high_level_hocbf', anonymous=False)
+    rospy.init_node('drone_payload_high_level_hocbf', anonymous=False)
     rate = rospy.Rate(50)  # 50hz
 
     taken_off = False
     received_initial_solution = False
     a = 0
+    t_v = 0
 
     P = np.eye(3)
     Q = np.array([0., 0., 0.], dtype=float).reshape((3,))
@@ -161,13 +162,7 @@ def main():
     lhs_ax = -lie_derivative(lie_derivative(b, f, 1), g.col(0))
     lhs_ay = -lie_derivative(lie_derivative(b, f, 1), g.col(1))
     lhs_az = -lie_derivative(lie_derivative(b, f, 1), g.col(2))
-    # rhs = Lf(b, 2) + sp.diff(b, t, 2) + alpha*sp.diff(b, t) + alpha*alpha*b + Lf(alpha*b) + sp.diff(alpha*b, t)
     rhs = Lf(b, 2) + sp.diff(b, t, 2) + 2*alpha*Lf(b) + alpha*sp.diff(b, t) + (alpha**2)*b
-    # rhs = Lf(b, 2) + sp.diff(b, t, 2) + 2*b*Lf(b) + 2*b*sp.diff(b, t) + (Lf(b))**2 + b**4 + 2*(b**2)*Lf(b)
-    # rhs = Lf(b, 2) + sp.diff(b, t, 2) + sp.diff(b, t)**2 + (alpha*b)**2 + Lf(alpha*b) + sp.diff(alpha*b, t)
-    # rhs = Lf(b, 2) + sp.diff(b, t, 2) + sp.diff(b, t)**2 + b**4 + Lf(b**2) + sp.diff(b**2, t)
-    # rhs = Lf(b, 2) + sp.diff(b, t, 2) + 2*b*Lf(b) + 2*b*sp.diff(b, t) + Lf(b)**2 + sp.diff(b, t)**2 + b**4 + 2*Lf(b)*sp.diff(b, t) + 2*(b**2)*Lf(b) + 2*(b**2)*sp.diff(b, t)
-    # rhs = Lf(b, 2) + 2*b*Lf(b) + Lf(b)**2 + 2*(b**2)*Lf(b)+b**4
 
     alpha = 0.3
     pow = 1
@@ -207,11 +202,10 @@ def main():
     while not rospy.is_shutdown():
         if not taken_off:
             print("taking off")
-            take_off_msg = attitude_thrust_cmd()
-            take_off_msg.thrust.data = 7.5
-            take_off_msg.roll.data = 0.0
-            take_off_msg.pitch.data = 0.0
-            take_off_msg.yaw.data = 0.0
+            take_off_msg = Vector3()
+            take_off_msg.x = 0
+            take_off_msg.y = 0
+            take_off_msg.z = 12.2
             pub.publish(take_off_msg)
             if pos_z >= 0.25:
                 taken_off = True
@@ -244,47 +238,18 @@ def main():
 
         lpf_const = 0.0
         if received_initial_solution:
-            a = (lpf_const * a) + (1 - lpf_const)*np.array(sol['x'])
+            t_v = (lpf_const * t_v) + (1 - lpf_const)*np.array(sol['x'])
         else:
-            a = np.array(sol['x'])  # the acceleration vector
+            received_initial_solution = True
+            t_v = np.array(sol['x'])
 
-        if a[2] < 0:
-            a[2] = 0
-        # elif a[2] > 1:
-        #     a[2] = 1
+        if t_v[2] < 0:
+            t_v[2] = 0
 
-        # if a[0] < -1:
-        #     a[0] = -1
-        # elif a[0] > 1:
-        #     a[0] = 1
-
-        # if a[1] < -1:
-        #     a[1] = -1
-        # elif a[1] > 1:
-        #     a[1] = 1
-
-
-
-        # a = a*m_T  # convert this to forces
-        f_t = np.linalg.norm(a)  # this is the thrust force requried
-        if f_t > 7.3:
-            f_t = 7.3
-        a_cap = (a / np.linalg.norm(a)).reshape(3)  # the direction vector of a
-        f_Z = np.array([0, 0, 1])
-        v = np.cross(f_Z.reshape(3), a_cap.reshape(3))  # f_z x a
-        c = np.dot(f_Z, a_cap)
-        vx = np.cross(np.eye(3), v)
-        R = np.eye(3) + vx + np.dot(vx, vx)*(1/(1+c))
-
-        r = Rotation.from_matrix(R)
-        angles = r.as_euler("zyx", degrees=False)
-
-        cmd_msg = attitude_thrust_cmd()
-        cmd_msg.thrust.data = f_t
-        cmd_msg.yaw.data = angles[0]
-        cmd_msg.pitch.data = angles[1]
-        cmd_msg.roll.data = angles[2]
-        print(f"the solution is {f_t, angles} at time {int(time_now)}")
+        cmd_msg = Vector3()
+        cmd_msg.x = t_v[0]
+        cmd_msg.y = t_v[1]
+        cmd_msg.z = t_v[2]
 
         pub.publish(cmd_msg)
 

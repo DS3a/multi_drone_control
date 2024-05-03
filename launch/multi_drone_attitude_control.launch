@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Launch the first attitude_thrust_control_node with namespace /hummingbird_0 -->
+  <node pkg="multi_drone_control" type="attitude_thrust_controller_node" name="attitude_thrust_control_node_0" ns="hummingbird_0" output="screen">
+    <!-- Add any necessary arguments or parameters here -->
+  </node>
+
+  <!-- Launch the second attitude_thrust_control_node with namespace /hummingbird_1 -->
+  <node pkg="multi_drone_control" type="attitude_thrust_controller_node" name="attitude_thrust_control_node_1" ns="hummingbird_1" output="screen">
+    <!-- Add any necessary arguments or parameters here -->
+  </node>
+
+  <!-- Launch the third attitude_thrust_control_node with namespace /hummingbird_2 -->
+  <node pkg="multi_drone_control" type="attitude_thrust_controller_node" name="attitude_thrust_control_node_2" ns="hummingbird_2" output="screen">
+    <!-- Add any necessary arguments or parameters here -->
+  </node>
+
+  <!-- Launch the fourth attitude_thrust_control_node with namespace /hummingbird_3 -->
+  <node pkg="multi_drone_control" type="attitude_thrust_controller_node" name="attitude_thrust_control_node_3" ns="hummingbird_3" output="screen">
+    <!-- Add any necessary arguments or parameters here -->
+  </node>
+
+</launch>
