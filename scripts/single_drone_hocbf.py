@@ -77,11 +77,11 @@ def Lf(barrier_fn, order=1):
 
 
 t = sp.symbols("t")  # symbol for time
-dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([-2, -5, 2])))
+dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([10, 5, 1])))
 # b1 = (50.1 - (50/14)*t) - sp.sqrt(dist.dot(dist))
-b1 = 7*sp.exp(-t/5) + 0.1 - sp.sqrt(dist.dot(dist))
+b1 = 40*sp.exp(-t/10) + 0.1 - sp.sqrt(dist.dot(dist))
 b2 = (347.93*sp.exp(-t/2.39) + 2) - sp.sqrt(dist.dot(dist))
-b2 = (347.93*sp.exp(-t/5) + 2) - sp.sqrt(dist.dot(dist))
+b2 = (347.93*sp.exp(-t/15) + 2) - sp.sqrt(dist.dot(dist))
 
 dist2 = (sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([-1, -2, 3]))
 # b2 = (347.93*sp.exp(-t/4) + 2) - sp.sqrt(dist.dot(dist2))

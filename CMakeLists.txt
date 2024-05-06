@@ -256,3 +256,7 @@ catkin_install_python(PROGRAMS scripts/single_drone_hocbf.py
 catkin_install_python(PROGRAMS scripts/four_drone_hocbf.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+catkin_install_python(PROGRAMS scripts/four_drone_distributed_control.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)

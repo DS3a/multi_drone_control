@@ -14,12 +14,13 @@ from geometry_msgs.msg import Vector3
 
 # Constants
 mass_drone = 0.825
+# mass_drone = 0.68
 mass_rotor = 0.009
 
 m_T = mass_drone + 4*mass_rotor
 N = 4  # number of drones
 
-mass_payload = 1.0 / N
+mass_payload = 1 / N
 mass_holder = 0.05
 m_T += mass_payload + mass_holder
 
@@ -84,11 +85,11 @@ def Lf(barrier_fn, order=1):
 
 
 t = sp.symbols("t")  # symbol for time
-dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([-2, -5, 2])))
+dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([0, 5, 4])))
 # b1 = (50.1 - (50/14)*t) - sp.sqrt(dist.dot(dist))
-b1 = 7*sp.exp(-t/5) + 0.1 - sp.sqrt(dist.dot(dist))
+b1 = 20*sp.exp(-t/8) + 0.1 - sp.sqrt(dist.dot(dist))
 b2 = (347.93*sp.exp(-t/2.39) + 2) - sp.sqrt(dist.dot(dist))
-b2 = (347.93*sp.exp(-t/5) + 2) - sp.sqrt(dist.dot(dist))
+b2 = (347.93*sp.exp(-t/12) + 2) - sp.sqrt(dist.dot(dist))
 
 dist2 = (sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([-1, -2, 3]))
 # b2 = (347.93*sp.exp(-t/4) + 2) - sp.sqrt(dist.dot(dist2))
@@ -98,7 +99,7 @@ b = -sp.ln(sp.exp(-b1) + sp.exp(-b2))
 # b = b1
 
 # barrier functions to enforce velocity constraints
-nu_max = 0.8  # max amplitude of pitch or roll can be 0.3 radians
+nu_max = 1.8  # max amplitude of pitch or roll can be 0.3 radians
 
 b_pitch_max = nu_max - v_x
 b_pitch_min = nu_max + v_x
@@ -158,7 +159,7 @@ def main():
     P = np.eye(3)
     Q = np.array([0., 0., 0.], dtype=float).reshape((3,))
 
-    alpha = 0.99
+    alpha = 0.9
     lhs_ax = -lie_derivative(lie_derivative(b, f, 1), g.col(0))
     lhs_ay = -lie_derivative(lie_derivative(b, f, 1), g.col(1))
     lhs_az = -lie_derivative(lie_derivative(b, f, 1), g.col(2))
@@ -205,9 +206,9 @@ def main():
             take_off_msg = Vector3()
             take_off_msg.x = 0
             take_off_msg.y = 0
-            take_off_msg.z = 12.2
+            take_off_msg.z = 11.5
             pub.publish(take_off_msg)
-            if pos_z >= 0.25:
+            if pos_z >= 0.75:
                 taken_off = True
                 start = time.time()
             rate.sleep()
@@ -240,12 +241,15 @@ def main():
         if received_initial_solution:
             t_v = (lpf_const * t_v) + (1 - lpf_const)*np.array(sol['x'])
         else:
-            received_initial_solution = True
+            # received_initial_solution = True
             t_v = np.array(sol['x'])
 
         if t_v[2] < 0:
             t_v[2] = 0
 
+        print(f"the force vector is {t_v}")
+        print(f"the velocity is {vel_x, vel_y, vel_z}")
+        print(f"the position is {pos_x, pos_y, pos_z}")
         cmd_msg = Vector3()
         cmd_msg.x = t_v[0]
         cmd_msg.y = t_v[1]
