@@ -77,7 +77,7 @@ def Lf(barrier_fn, order=1):
 
 
 t = sp.symbols("t")  # symbol for time
-dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([10, 5, 1])))
+dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([10, 10, 1])))
 # b1 = (50.1 - (50/14)*t) - sp.sqrt(dist.dot(dist))
 b1 = 40*sp.exp(-t/10) + 0.1 - sp.sqrt(dist.dot(dist))
 b2 = (347.93*sp.exp(-t/2.39) + 2) - sp.sqrt(dist.dot(dist))
@@ -231,7 +231,7 @@ def main():
         # print("rhs of hocbf is ", eval_expr(rhs, time_now))
 
         delta = 0.5
-        h = np.array([[eval_expr(rhs, time_now)],    #  ], dtype=float)  # HOCBF constraint
+        h = np.array([[eval_expr(rhs, time_now)+2*delta],    #  ], dtype=float)  # HOCBF constraint
                       [eval_expr(rhs_b_roll_max)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_pitch_max)+delta],  # ], dtype=float)  # pitch angle constraint
