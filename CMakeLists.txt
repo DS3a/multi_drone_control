@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.0.2)
 project(multi_drone_control)
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
 
@@ -16,6 +21,8 @@ find_package(catkin REQUIRED COMPONENTS
   Eigen3
   message_generation
 )
+
+find_package(CGAL REQUIRED)
 
 add_library(roll_rate_controller include/roll_rate_Controller_ert_rtw/roll_rate_Controller.cpp)
 
@@ -38,7 +45,6 @@ add_library(yaw_controller include/yaw_pid_ert_rtw/yaw_pid.cpp)
 ## Uncomment this if the package has a setup.py. This macro ensures
 ## modules and global scripts declared therein get installed
 ## See http://ros.org/doc/api/catkin/html/user_guide/setup_dot_py.html
-# catkin_python_setup()
 
 ################################################
 ## Declare ROS messages, services and actions ##
@@ -86,6 +92,7 @@ add_message_files(
 #   Action2.action
 # )
 
+catkin_python_setup()
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
@@ -249,7 +256,19 @@ target_link_libraries(attitude_thrust_controller_node
   ${Eigen3_LIBRARIES}
   ${catkin_LIBRARIES})
 
+add_executable(single_drone_hocbf_node src/single_drone_hocbf_node.cpp)
+target_link_libraries(single_drone_hocbf_node
+  ${Eigen3_LIBRARIES}
+  ${catkin_LIBRARIES}
+  CGAL::CGAL
+  )
+
 catkin_install_python(PROGRAMS scripts/single_drone_hocbf.py
+  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+
+catkin_install_python(PROGRAMS scripts/single_drone_collision_cone.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
@@ -260,3 +279,5 @@ catkin_install_python(PROGRAMS scripts/four_drone_hocbf.py
 catkin_install_python(PROGRAMS scripts/four_drone_distributed_control.py
   DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
+
+
