@@ -15,6 +15,16 @@ typedef CGAL::MP_Float ET;
 #include "multi_drone_control/obstacle.hpp"
 #include "multi_drone_control/cbf_constraint.hpp"
 #include "multi_drone_control/hocbf_barrier_fn.hpp"
+#include "multi_drone_control/vel_barriers.hpp"
+
+
+typedef CGAL::Quadratic_program<int> Program;
+typedef CGAL::Quadratic_program_solution<ET> Solution;
+
+const int ax_idx = 0;
+const int ay_idx = 1;
+const int az_idx = 2;
+
 
 std::shared_ptr<Eigen::Vector3d> uav_pos;
 std::shared_ptr<Eigen::Vector3d> uav_vel;
@@ -35,11 +45,13 @@ void odom_callback(const nav_msgs::Odometry::ConstPtr& msg) {
 // TODO create a vector of obstacles
 
 int main(int argc, char **argv) {
-    uav_pos = std::make_shared<Eigen::Vector3d>(Eigen::Vector3d(1, 2, 3));
-    uav_vel = std::make_shared<Eigen::Vector3d>(Eigen::Vector3d(0, 1, 0));
+    uav_pos = std::make_shared<Eigen::Vector3d>(Eigen::Vector3d(0, 0, 0));
+    uav_vel = std::make_shared<Eigen::Vector3d>(Eigen::Vector3d(0, 0, 0));
 
     cbf_hyperparams = std::make_shared<cbf_constraint::hyperparams_t>();
     cbf_hyperparams->alpha = 0.9;
+    cbf_hyperparams->max_vel = 0.8;
+    cbf_hyperparams->max_vel_z = 5;
     uav_state = std::make_shared<cbf_constraint::state_t>();
     uav_state->pos = uav_pos;
     uav_state->vel = uav_vel;
@@ -70,6 +82,7 @@ int main(int argc, char **argv) {
         double stl_lhs_ax = stl_hocbf::lhs_ax(*uav_state, *cbf_hyperparams);
         double stl_lhs_ay = stl_hocbf::lhs_ay(*uav_state, *cbf_hyperparams);
         double stl_lhs_az = stl_hocbf::lhs_az(*uav_state, *cbf_hyperparams);
+        std::shared_ptr<Program> qp = std::make_shared<Program>(CGAL::SMALLER, false, 0, false, 0);
 
         printf("the values of the rhs is %f, the lhs_ax is %f\n", stl_rhs, stl_lhs_ax);
         multi_drone_control::attitude_thrust_cmd msg;
