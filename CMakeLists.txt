@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+include(FetchContent)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -21,6 +22,14 @@ find_package(catkin REQUIRED COMPONENTS
   Eigen3
   message_generation
 )
+
+FetchContent_Declare(
+  osqp-cpp
+  GIT_REPOSITORY  https://github.com/google/osqp-cpp.git  # Replace with the correct URL
+  GIT_TAG        origin/master  # Use the correct tag or branch
+)
+FetchContent_MakeAvailable(osqp-cpp)
+
 
 find_package(CGAL REQUIRED)
 
@@ -261,10 +270,11 @@ target_link_libraries(single_drone_hocbf_node
   ${Eigen3_LIBRARIES}
   ${catkin_LIBRARIES}
   CGAL::CGAL
+  osqp-cpp
   )
 
 catkin_install_python(PROGRAMS scripts/single_drone_hocbf.py
-  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+  DESTINATION {CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
 

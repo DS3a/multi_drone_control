@@ -272,7 +272,7 @@ def main():
         #           [0, 0, eval_expr(lhs_b_v_z_max_az)],  # v_z_max constraint
         #           [0, 0, eval_expr(lhs_b_v_z_min_az)]]
 
-        G_list = [[eval_expr(lhs_ax, time_now), eval_expr(lhs_ay, time_now), eval_expr(lhs_az, time_now)],   #  ], dtype=float) # HOCBF constraints
+        G_list = [#[eval_expr(lhs_ax, time_now), eval_expr(lhs_ay, time_now), eval_expr(lhs_az, time_now)],   #  ], dtype=float) # HOCBF constraints
                   [eval_expr(lhs_b_roll_max_ax), eval_expr(lhs_b_roll_max_ay), eval_expr(lhs_b_roll_max_az)],  # roll angle max constraint
                   [eval_expr(lhs_b_roll_min_ax), eval_expr(lhs_b_roll_min_ay), eval_expr(lhs_b_roll_min_az)],  # roll angle min constraint
                   [eval_expr(lhs_b_pitch_max_ax), eval_expr(lhs_b_pitch_max_ay), eval_expr(lhs_b_pitch_max_az)], #], dtype=float)  # pitch angle max constraint
@@ -286,7 +286,7 @@ def main():
         # print("rhs of hocbf is ", eval_expr(rhs, time_now))
 
         delta = 0.5
-        h_list = [[eval_expr(rhs, time_now)],        #  ], dtype=float)  # HOCBF constraint
+        h_list = [#[eval_expr(rhs, time_now)],        #  ], dtype=float)  # HOCBF constraint
                   [eval_expr(rhs_b_roll_max)+delta],  # roll angle constraint
                   [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
                   [eval_expr(rhs_b_pitch_max)+delta],  # ], dtype=float)  # pitch angle constraint
@@ -298,20 +298,10 @@ def main():
         h = np.array(h_list, dtype=float)  # v_z_min constraint
 
         solvers.options['show_progress'] = False
-        sol = solvers.qp(matrix(P), matrix(Q), matrix(G), matrix(h))
+        # sol = solvers.qp(matrix(P), matrix(Q), matrix(G), matrix(h))
         print(f"time to solve qp {time.time() - s}")
 
 
-
-        lpf_const = 0.0
-        if received_initial_solution:
-            a = (lpf_const * a) + (1 - lpf_const)*np.array(sol['x'])
-        else:
-            a = np.array(sol['x'])  # the thrust vector
-
-            ### It's confusing that a is the thrust vector, initially, it was the acceleration vector, but was changed, to make it easy
-        if a[2] < 0:
-            a[2] = 0
 
         # G_list = [
         #   [eval_expr(lhs_b_roll_max_ax), eval_expr(lhs_b_roll_max_ay), eval_expr(lhs_b_roll_max_az)],  # roll angle max constraint
@@ -333,23 +323,33 @@ def main():
 
 
 
-        # for obs in obstacles_list:
+        for obs in obstacles_list:
         #     # print(f"the distance to obstacle {obs.r} is {eval_c3bf(sp.sqrt(p_rel.dot(p_rel)), obs)}")
-        #     if (eval_c3bf(sp.sqrt(p_rel.dot(p_rel)), obs) < 3) and False:
-        #         G_list.append([eval_c3bf(lhs_ax_c3bf, obs), eval_c3bf(lhs_ay_c3bf, obs), eval_c3bf(lhs_az_c3bf, obs)])
-        #         h_list.append([eval_c3bf(rhs_c3bf, obs)])
-        #     else:
-        #         G_list.append([0, 0, 0])
-        #         h_list.append([2])
+            # if (eval_c3bf(sp.sqrt(p_rel.dot(p_rel)), obs) < 3) and False:
+            G_list.append([eval_c3bf(lhs_ax_c3bf, obs), eval_c3bf(lhs_ay_c3bf, obs), eval_c3bf(lhs_az_c3bf, obs)])
+            h_list.append([eval_c3bf(rhs_c3bf, obs)])
+            # else:
+            #     G_list.append([0, 0, 0])
+            #     h_list.append([2])
 
         # G = np.array(G_list, dtype=float)  # v_z min constraint
         # h = np.array(h_list, dtype=float)  # v_z_min constraint
         # P = 2*np.eye(3)
         # Q = -2*a
 
-        # c3bf_sol = solvers.qp(matrix(P), matrix(Q), matrix(G), matrix(h))
+        c3bf_sol = solvers.qp(matrix(P), matrix(Q), matrix(G), matrix(h))
 
-        # a = np.array(c3bf_sol['x'])
+        a = np.array(c3bf_sol['x'])
+        lpf_const = 0.0
+        if received_initial_solution:
+            a = (lpf_const * a) + (1 - lpf_const)*np.array(c3bf_sol['x'])
+        else:
+            a = np.array(c3bf_sol['x'])  # the thrust vector
+
+            ### It's confusing that a is the thrust vector, initially, it was the acceleration vector, but was changed, to make it easy
+        if a[2] < 0:
+            a[2] = 0
+
 
         # a = a*m_T  # convert this to forces
         f_t = np.linalg.norm(a)  # this is the thrust force requried

@@ -78,15 +78,9 @@ def Lf(barrier_fn, order=1):
 
 t = sp.symbols("t")  # symbol for time
 dist = ((sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([10, 10, 1])))
-# b1 = (50.1 - (50/14)*t) - sp.sqrt(dist.dot(dist))
 b1 = 40*sp.exp(-t/10) + 0.1 - sp.sqrt(dist.dot(dist))
-b2 = (347.93*sp.exp(-t/2.39) + 2) - sp.sqrt(dist.dot(dist))
 b2 = (347.93*sp.exp(-t/15) + 2) - sp.sqrt(dist.dot(dist))
 
-dist2 = (sp.Matrix([p_x, p_y, p_z]) - sp.Matrix([-1, -2, 3]))
-# b2 = (347.93*sp.exp(-t/4) + 2) - sp.sqrt(dist.dot(dist2))
-b3 = (2 + 400*sp.exp(-t/8)) - sp.sqrt(dist2.dot(dist2))
-b = -sp.ln(sp.exp(-b1) + sp.exp(-b2) + sp.exp(-b3))
 b = -sp.ln(sp.exp(-b1) + sp.exp(-b2))
 # b = b1
 
@@ -220,7 +214,7 @@ def main():
             continue
 
         time_now = time.time() - start
-        G = np.array([[eval_expr(lhs_ax, time_now), eval_expr(lhs_ay, time_now), eval_expr(lhs_az, time_now)],  #  ], dtype=float) # HOCBF constraints
+        G = np.array([#[eval_expr(lhs_ax, time_now), eval_expr(lhs_ay, time_now), eval_expr(lhs_az, time_now)],  #  ], dtype=float) # HOCBF constraints
                       [eval_expr(lhs_b_roll_max_ax), eval_expr(lhs_b_roll_max_ay), eval_expr(lhs_b_roll_max_az)],  # roll angle max constraint
                       [eval_expr(lhs_b_roll_min_ax), eval_expr(lhs_b_roll_min_ay), eval_expr(lhs_b_roll_min_az)],  # roll angle min constraint
                       [eval_expr(lhs_b_pitch_max_ax), eval_expr(lhs_b_pitch_max_ay), eval_expr(lhs_b_pitch_max_az)], #], dtype=float)  # pitch angle max constraint
@@ -231,7 +225,7 @@ def main():
         # print("rhs of hocbf is ", eval_expr(rhs, time_now))
 
         delta = 0.5
-        h = np.array([[eval_expr(rhs, time_now)+2*delta],    #  ], dtype=float)  # HOCBF constraint
+        h = np.array([#[eval_expr(rhs, time_now)+2*delta],    #  ], dtype=float)  # HOCBF constraint
                       [eval_expr(rhs_b_roll_max)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_pitch_max)+delta],  # ], dtype=float)  # pitch angle constraint

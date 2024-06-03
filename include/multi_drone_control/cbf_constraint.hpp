@@ -8,6 +8,18 @@
 
 #include "multi_drone_control/obstacle.hpp"
 
+#include <CGAL/QP_models.h>
+#include <CGAL/QP_functions.h>
+#include <CGAL/MP_Float.h>
+typedef CGAL::MP_Float ET;
+
+
+typedef CGAL::Quadratic_program<ET> Program;
+typedef CGAL::Quadratic_program_solution<ET> Solution;
+
+#define AX_IDX 0
+#define AY_IDX 1
+#define AZ_IDX 2
 
 namespace cbf_constraint {
     typedef struct {
@@ -44,8 +56,37 @@ namespace cbf_constraint {
             this->_rhs = rhs;
         }
 
-        bool add_to_qp() {
+        void add_to_qp(std::shared_ptr<Program> qp,
+                       std::shared_ptr<state_t> state,
+                       std::shared_ptr<hyperparams_t> hyperparams,
+                       int idx,
+                       double delta=0.0) {
+            qp->set_a(AX_IDX, idx, this->_lhs_ax(*state, *hyperparams));
+            qp->set_a(AY_IDX, idx, this->_lhs_ay(*state, *hyperparams));
+            qp->set_a(AZ_IDX, idx, this->_lhs_az(*state, *hyperparams));
 
+            qp->set_b(idx, this->_rhs(*state, *hyperparams)+delta);
+        }
+
+        double get_lhs_ax(std::shared_ptr<state_t> state,
+                          std::shared_ptr<hyperparams_t> hyperparams) {
+            return this->_lhs_ax(*state, *hyperparams);
+        }
+
+        double get_lhs_ay(std::shared_ptr<state_t> state,
+                          std::shared_ptr<hyperparams_t> hyperparams) {
+            return this->_lhs_ay(*state, *hyperparams);
+        }
+
+        double get_lhs_az(std::shared_ptr<state_t> state,
+                          std::shared_ptr<hyperparams_t> hyperparams) {
+            return this->_lhs_az(*state, *hyperparams);
+        }
+
+
+        double get_rhs(std::shared_ptr<state_t> state,
+                       std::shared_ptr<hyperparams_t> hyperparams) {
+            return this->_rhs(*state, *hyperparams);
         }
     };
 
