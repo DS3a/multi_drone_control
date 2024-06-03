@@ -5,17 +5,29 @@ import sympy as sp
 import numpy as np
 from cvxopt import solvers, matrix
 import time
+from ctypes import cdll
+from ctypes import c_double, c_int
 
 from nav_msgs.msg import Odometry
 from multi_drone_control.msg import attitude_thrust_cmd
 from scipy.spatial.transform import Rotation
+
+stl_lib = cdll.LoadLibrary("/home/ds3a/rotorS_ws/src/multi_drone_control/codegen/stl_hocbf.so")
+
+stl_lib.rhs.restype = c_double
+stl_lib.lhs_ax.restype = c_double
+stl_lib.lhs_ay.restype = c_double
+stl_lib.lhs_az.restype = c_double
+
+uav_state = stl_lib.new_state()
+hps = stl_lib.new_hyperparams()
 
 # Constants
 mass_drone = 0.825
 mass_rotor = 0.009
 
 m_T = mass_drone + 4*mass_rotor
-
+uav_state = stl_lib.update_mass(uav_state, c_double(m_T))
 ### State space of the system
 
 p_x, p_y, p_z = sp.symbols("p_x p_y p_z")  # positions
@@ -116,13 +128,24 @@ vel_z = None
 
 
 def odom_callback(data):
-    global pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw
+    global pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, roll, pitch, yaw, uav_state
     pos_x = data.pose.pose.position.x
     pos_y = data.pose.pose.position.y
     pos_z = data.pose.pose.position.z
     vel_x = data.twist.twist.linear.x
     vel_y = data.twist.twist.linear.y
     vel_z = data.twist.twist.linear.z
+
+    uav_state = stl_lib.update_pos(
+        uav_state,
+        c_double(pos_x),
+        c_double(pos_y),
+        c_double(pos_z))
+    uav_state = stl_lib.update_vel(
+        uav_state,
+        c_double(vel_x),
+        c_double(vel_y),
+        c_double(vel_z))
 
     return
 
@@ -136,7 +159,7 @@ def eval_expr(e, t_actual=0):
 
 
 def main():
-    global pos_x, pos_y, pos_z, vel_x, vel_y, vel_z
+    global pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, uav_state, hps
     pub = rospy.Publisher('/hummingbird0/drone_cmd', attitude_thrust_cmd,
                           queue_size=10)
     _ = rospy.Subscriber("/hummingbird0/ground_truth/odometry",
@@ -197,6 +220,8 @@ def main():
     # rhs_b_v_z_min = lie_derivative(b_v_z_min, f) + alpha * b_v_z_min
     rhs_b_v_z_min = lie_derivative(b_v_z_min, f) + alpha*b_v_z_min**pow
 
+    hps = stl_lib.update_alpha(hps, c_double(0.90))
+
     start = time.time()
     while not rospy.is_shutdown():
         if not taken_off:
@@ -214,7 +239,13 @@ def main():
             continue
 
         time_now = time.time() - start
+        uav_state = stl_lib.update_time(uav_state, c_double(time_now))
+        # print(f"lhs ax is {stl_lib.lhs_ax(uav_state, hps)}")
+        # print(f"lhs ay is {stl_lib.lhs_ax(uav_state, hps)}")
+        # print(f"lhs az is {stl_lib.lhs_ax(uav_state, hps)}")
         G = np.array([#[eval_expr(lhs_ax, time_now), eval_expr(lhs_ay, time_now), eval_expr(lhs_az, time_now)],  #  ], dtype=float) # HOCBF constraints
+                      [stl_lib.lhs_ax(uav_state, hps), stl_lib.lhs_ay(uav_state, hps), stl_lib.lhs_az(uav_state, hps)],
+                      # [-10, -10, -10],
                       [eval_expr(lhs_b_roll_max_ax), eval_expr(lhs_b_roll_max_ay), eval_expr(lhs_b_roll_max_az)],  # roll angle max constraint
                       [eval_expr(lhs_b_roll_min_ax), eval_expr(lhs_b_roll_min_ay), eval_expr(lhs_b_roll_min_az)],  # roll angle min constraint
                       [eval_expr(lhs_b_pitch_max_ax), eval_expr(lhs_b_pitch_max_ay), eval_expr(lhs_b_pitch_max_az)], #], dtype=float)  # pitch angle max constraint
@@ -225,7 +256,9 @@ def main():
         # print("rhs of hocbf is ", eval_expr(rhs, time_now))
 
         delta = 0.5
+        # print(f"rhs is {stl_lib.rhs(uav_state, hps)}")
         h = np.array([#[eval_expr(rhs, time_now)+2*delta],    #  ], dtype=float)  # HOCBF constraint
+                      [stl_lib.rhs(uav_state, hps)],
                       [eval_expr(rhs_b_roll_max)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
                       [eval_expr(rhs_b_pitch_max)+delta],  # ], dtype=float)  # pitch angle constraint
@@ -244,19 +277,6 @@ def main():
 
         if a[2] < 0:
             a[2] = 0
-        # elif a[2] > 1:
-        #     a[2] = 1
-
-        # if a[0] < -1:
-        #     a[0] = -1
-        # elif a[0] > 1:
-        #     a[0] = 1
-
-        # if a[1] < -1:
-        #     a[1] = -1
-        # elif a[1] > 1:
-        #     a[1] = 1
-
 
 
         # a = a*m_T  # convert this to forces

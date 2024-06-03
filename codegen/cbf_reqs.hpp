@@ -31,6 +31,11 @@ extern "C" {
         return new state_t();
     }
 
+    state_t* update_mass(state_t* state, double mass) {
+        state->mass = mass;
+        return state;
+    }
+
     state_t* update_pos(state_t* state,
                         double pos_x,
                         double pos_y,
