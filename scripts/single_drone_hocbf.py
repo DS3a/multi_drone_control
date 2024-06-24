@@ -6,18 +6,25 @@ import numpy as np
 from cvxopt import solvers, matrix
 import time
 from ctypes import cdll
-from ctypes import c_double, c_int
+from ctypes import c_double
 
 from nav_msgs.msg import Odometry
 from multi_drone_control.msg import attitude_thrust_cmd
 from scipy.spatial.transform import Rotation
 
 stl_lib = cdll.LoadLibrary("/home/ds3a/rotorS_ws/src/multi_drone_control/codegen/stl_hocbf.so")
+c3bf_lib = cdll.LoadLibrary("/home/ds3a/rotorS_ws/src/multi_drone_control/codegen/c3bf.so")
 
 stl_lib.rhs.restype = c_double
 stl_lib.lhs_ax.restype = c_double
 stl_lib.lhs_ay.restype = c_double
 stl_lib.lhs_az.restype = c_double
+
+c3bf_lib.rhs.restype = c_double
+c3bf_lib.lhs_ax.restype = c_double
+c3bf_lib.lhs_ay.restype = c_double
+c3bf_lib.lhs_az.restype = c_double
+
 
 uav_state = stl_lib.new_state()
 hps = stl_lib.new_hyperparams()

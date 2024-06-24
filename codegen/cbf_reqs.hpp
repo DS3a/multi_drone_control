@@ -17,7 +17,9 @@ typedef struct {
     double obstacle_pos_z;
     double obstacle_vel_x;
     double obstacle_vel_y;
-    double obstacle_vel_z; double radius; int is_long;
+    double obstacle_vel_z;
+    double radius;
+    int is_long;
 } state_t;
 
 typedef struct {
