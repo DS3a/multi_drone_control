@@ -112,18 +112,25 @@ b = -sp.ln(sp.exp(-b1) + sp.exp(-b2) + sp.exp(-b3))
 b = -sp.ln(sp.exp(-b1) + sp.exp(-b2))
 
 # barrier functions to enforce velocity constraints
-nu_max = 1.2  # max amplitude of pitch or roll can be 0.3 radians
+nu_max = 7  # max amplitude of pitch or roll can be 0.3 radians
 
+nu_max = sp.symbols("nu_max")
 b_pitch_max = nu_max - v_x
 b_pitch_min = nu_max + v_x
 
+b_pitch_max = -(v_x - nu_max)*(v_x + nu_max)
+
 b_roll_max = nu_max - v_y
 b_roll_min = nu_max + v_y
+
+b_roll_max = -(v_y - nu_max)*(v_y + nu_max)
 
 v_max = 5.5
 v_min = -5.0
 b_v_z_max = v_max - v_z
 b_v_z_min = -v_min + v_z
+# b_v_z_max = b_v_z_min
+# b_v_z_max = -(v_z - v_max)*(v_z - v_min)
 
 # collision cone barrier function
 c_x, c_y = sp.symbols("c_x c_y")
@@ -147,6 +154,7 @@ vel_x = None
 vel_y = None
 vel_z = None
 
+vel_max = 7
 
 obs_buffer = -0.25  # meters
 obstacles_list = [Obstacle(r=0.35), Obstacle(r=0.45)]
@@ -191,7 +199,7 @@ def eval_expr(e, t_actual=0):
         return 0
     return e.subs({p_x: pos_x, p_y: pos_y, p_z: pos_z,
                    v_x: vel_x, v_y: vel_y,
-                   v_z: vel_z, t: t_actual}).evalf()
+                   v_z: vel_z, t: t_actual, nu_max: vel_max}).evalf()
 
 
 def eval_c3bf(e, obs: Obstacle):
@@ -207,7 +215,7 @@ def eval_c3bf(e, obs: Obstacle):
 
 def main():
     collision_cone.hello()
-    global pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, uav_state, hps
+    global pos_x, pos_y, pos_z, vel_x, vel_y, vel_z, uav_state, hps, vel_max
     pub = rospy.Publisher('/hummingbird0/drone_cmd', attitude_thrust_cmd,
                           queue_size=10)
     _ = rospy.Subscriber("/hummingbird0/ground_truth/odometry",
@@ -215,7 +223,7 @@ def main():
     rospy.Subscriber('/obstacle', Odometry, obstacle_callback)
 
     rospy.init_node('drone_high_level_hocbf', anonymous=False)
-    rate = rospy.Rate(50)  # 50hz
+    rate = rospy.Rate(100)  # 50hz
 
     taken_off = False
     received_initial_solution = False
@@ -261,6 +269,8 @@ def main():
     rhs_b_roll_max = lie_derivative(b_roll_max, f) + alpha*b_roll_max
     # rhs_b_roll_max = lie_derivative(b_roll_max, f) + alpha*b_roll_max**pow
 
+
+    alpha = 0.3
     lhs_b_v_z_max_az = -lie_derivative(b_v_z_max, g.col(2))
     rhs_b_v_z_max = lie_derivative(b_v_z_max, f) + alpha * b_v_z_max
     # rhs_b_v_z_max = lie_derivative(b_v_z_max, f) + alpha*b_v_z_max**pow
@@ -301,23 +311,26 @@ def main():
         G_list = [#[eval_expr(lhs_ax, time_now), eval_expr(lhs_ay, time_now), eval_expr(lhs_az, time_now)],   #  ], dtype=float) # HOCBF constraints
                   # [stl_lib.lhs_ax(uav_state, hps), stl_lib.lhs_ay(uav_state, hps), stl_lib.lhs_az(uav_state, hps)],
                   [eval_expr(lhs_b_roll_max_ax), eval_expr(lhs_b_roll_max_ay), eval_expr(lhs_b_roll_max_az)],  # roll angle max constraint
-                  [eval_expr(lhs_b_roll_min_ax), eval_expr(lhs_b_roll_min_ay), eval_expr(lhs_b_roll_min_az)],  # roll angle min constraint
+                  # [eval_expr(lhs_b_roll_min_ax), eval_expr(lhs_b_roll_min_ay), eval_expr(lhs_b_roll_min_az)],  # roll angle min constraint
                   [eval_expr(lhs_b_pitch_max_ax), eval_expr(lhs_b_pitch_max_ay), eval_expr(lhs_b_pitch_max_az)], #], dtype=float)  # pitch angle max constraint
-                  [eval_expr(lhs_b_pitch_min_ax), eval_expr(lhs_b_pitch_min_ay), eval_expr(lhs_b_pitch_min_az)], #], dtype=float)  # pitch angle max constraint
+                  # [eval_expr(lhs_b_pitch_min_ax), eval_expr(lhs_b_pitch_min_ay), eval_expr(lhs_b_pitch_min_az)], #], dtype=float)  # pitch angle max constraint
                   [0, 0, eval_expr(lhs_b_v_z_max_az)],  # v_z_max constraint
-                  [0, 0, eval_expr(lhs_b_v_z_min_az)]]
+                  [0, 0, eval_expr(lhs_b_v_z_min_az)]
+        ]
 
         # print("rhs of hocbf is ", eval_expr(rhs, time_now))
 
-        delta = 6.0
+        delta = 0.0
+        z_delta = 0.0
         h_list = [#[eval_expr(rhs, time_now)],        #  ], dtype=float)  # HOCBF constraint
                   # [stl_lib.rhs(uav_state, hps)],
                   [eval_expr(rhs_b_roll_max)+delta],  # roll angle constraint
-                  [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
+                  # [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
                   [eval_expr(rhs_b_pitch_max)+delta],  # ], dtype=float)  # pitch angle constraint
-                  [eval_expr(rhs_b_pitch_min)+delta],  # ], dtype=float)  # pitch angle constraint
-                  [eval_expr(rhs_b_v_z_max)],  # v_z_max constraint
-                  [eval_expr(rhs_b_v_z_min)]]
+                  # [eval_expr(rhs_b_pitch_min)+delta],  # ], dtype=float)  # pitch angle constraint
+                  [eval_expr(rhs_b_v_z_max)+z_delta],  # v_z_max constraint
+                  [eval_expr(rhs_b_v_z_min)+z_delta]
+        ]
 
         G_list.append(
                 [stl_lib.lhs_ax(uav_state, hps), stl_lib.lhs_ay(uav_state, hps), stl_lib.lhs_az(uav_state, hps)],
@@ -349,20 +362,22 @@ def main():
             c3bf_active = True
             G_list = [
                 [eval_expr(lhs_b_roll_max_ax), eval_expr(lhs_b_roll_max_ay), eval_expr(lhs_b_roll_max_az)],  # roll angle max constraint
-                [eval_expr(lhs_b_roll_min_ax), eval_expr(lhs_b_roll_min_ay), eval_expr(lhs_b_roll_min_az)],  # roll angle min constraint
+                # [eval_expr(lhs_b_roll_min_ax), eval_expr(lhs_b_roll_min_ay), eval_expr(lhs_b_roll_min_az)],  # roll angle min constraint
                 [eval_expr(lhs_b_pitch_max_ax), eval_expr(lhs_b_pitch_max_ay), eval_expr(lhs_b_pitch_max_az)], #], dtype=float)  # pitch angle max constraint
-                [eval_expr(lhs_b_pitch_min_ax), eval_expr(lhs_b_pitch_min_ay), eval_expr(lhs_b_pitch_min_az)], #], dtype=float)  # pitch angle max constraint
+                # [eval_expr(lhs_b_pitch_min_ax), eval_expr(lhs_b_pitch_min_ay), eval_expr(lhs_b_pitch_min_az)], #], dtype=float)  # pitch angle max constraint
                 [0, 0, eval_expr(lhs_b_v_z_max_az)],  # v_z_max constraint
-                [0, 0, eval_expr(lhs_b_v_z_min_az)]]
+                [0, 0, eval_expr(lhs_b_v_z_min_az)]
+            ]
 
-            delta = 0
+            delta = 0.0
             h_list = [
                 [eval_expr(rhs_b_roll_max)+delta],  # roll angle constraint
-                [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
+                # [eval_expr(rhs_b_roll_min)+delta],  # roll angle constraint
                 [eval_expr(rhs_b_pitch_max)+delta],  # ], dtype=float)  # pitch angle constraint
-                [eval_expr(rhs_b_pitch_min)+delta],  # ], dtype=float)  # pitch angle constraint
+                # [eval_expr(rhs_b_pitch_min)+delta],  # ], dtype=float)  # pitch angle constraint
                 [eval_expr(rhs_b_v_z_max)],  # v_z_max constraint
-                [eval_expr(rhs_b_v_z_min)]]
+                [eval_expr(rhs_b_v_z_min)]
+            ]
 
             for obs in obstacles_list:
                 if (eval_c3bf(sp.sqrt(p_rel.dot(p_rel)), obs) < 10):
@@ -418,6 +433,9 @@ def main():
         print(f"the solution is {f_t, angles} at time {int(time_now)}")
 
         pub.publish(cmd_msg)
+
+        if np.sqrt((pos_x - 10)**2 + (pos_y - 10)**2 + (pos_z - 1)**2) < 4:
+            vel_max = 0.5
 
         rate.sleep()
 
