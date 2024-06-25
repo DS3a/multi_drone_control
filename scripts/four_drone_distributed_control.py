@@ -67,6 +67,11 @@ if __name__ == '__main__':
     rate = rospy.Rate(100)
 
     while not rospy.is_shutdown():
+        hb_0_z = 0
+        hb_1_z = 0
+        hb_2_z = 0
+        hb_3_z = 0
+
         f_t = np.linalg.norm(required_thrust_vector)
         angles = get_angles_from_thrust(required_thrust_vector)
         print(angles)
@@ -75,6 +80,7 @@ if __name__ == '__main__':
         cmd_msg.yaw.data = angles[0]
         cmd_msg.pitch.data = angles[1]
         cmd_msg.roll.data = angles[2]
+
 
         hb_0.publish(cmd_msg)
         hb_1.publish(cmd_msg)
