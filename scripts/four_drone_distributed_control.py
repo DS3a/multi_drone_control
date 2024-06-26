@@ -14,6 +14,11 @@ required_thrust_vector = np.array([0, 0, 0])
 payload_roll = 0.0
 payload_pitch = 0.0
 
+KP = 18
+
+PITCH_KP = KP
+ROLL_KP = KP
+
 
 def payload_odom_callback(data):
     global payload_roll, payload_pitch
@@ -33,7 +38,7 @@ def thrust_vector_callback(data):
 
 
 def get_angles_from_thrust(thrust_vec):
-    f_t = np.linalg.norm(thrust_vec)
+    # f_t = np.linalg.norm(thrust_vec)
     fr_cap = thrust_vec / np.linalg.norm(thrust_vec)
     f_Z = np.array([0, 0, 1])
     v = np.cross(f_Z, fr_cap)
@@ -45,6 +50,21 @@ def get_angles_from_thrust(thrust_vec):
     angles = r.as_euler("zyx", degrees=False)
     return angles
 
+
+def publish_cmd(hb, thrust_vector):
+    f_t = np.linalg.norm(thrust_vector)
+    angles = get_angles_from_thrust(thrust_vector)
+    angles[np.isnan(angles)] = 0
+    print(angles)
+    cmd_msg = attitude_thrust_cmd()
+    cmd_msg.thrust.data = f_t
+    cmd_msg.yaw.data = angles[0]
+    cmd_msg.pitch.data = angles[1]
+    cmd_msg.roll.data = angles[2]
+
+    hb.publish(cmd_msg)
+
+
 if __name__ == '__main__':
     # Initialize ROS node
     rospy.init_node('thrust_vector_subscriber', anonymous=True)
@@ -52,7 +72,8 @@ if __name__ == '__main__':
     # Subscribe to the "/payload/thrust_vector" topic
     rospy.Subscriber("/payload/thrust_vector", Vector3, thrust_vector_callback)
 
-    rospy.Subscriber("/payload/ground_truth/odometry", Odometry, payload_odom_callback)
+    rospy.Subscriber("/payload/ground_truth/odometry", Odometry,
+                     payload_odom_callback)
 
     # Publishers for the 4 different topics
     hb_0 = rospy.Publisher("/hummingbird_0/drone_cmd",
@@ -72,19 +93,29 @@ if __name__ == '__main__':
         hb_2_z = 0
         hb_3_z = 0
 
-        f_t = np.linalg.norm(required_thrust_vector)
-        angles = get_angles_from_thrust(required_thrust_vector)
-        print(angles)
-        cmd_msg = attitude_thrust_cmd()
-        cmd_msg.thrust.data = f_t
-        cmd_msg.yaw.data = angles[0]
-        cmd_msg.pitch.data = angles[1]
-        cmd_msg.roll.data = angles[2]
+        hb_0_z = -(PITCH_KP * payload_pitch) - (ROLL_KP * payload_roll)
+        hb_1_z = -(PITCH_KP * payload_pitch) + (ROLL_KP * payload_roll)
+        hb_2_z = +(PITCH_KP * payload_pitch) + (ROLL_KP * payload_roll)
+        hb_3_z = +(PITCH_KP * payload_pitch) - (ROLL_KP * payload_roll)
 
+        # f_t = np.linalg.norm(required_thrust_vector)
+        # angles = get_angles_from_thrust(required_thrust_vector)
+        # angles[np.isnan(angles)] = 0
+        # print(angles)
+        # cmd_msg = attitude_thrust_cmd()
+        # cmd_msg.thrust.data = f_t
+        # cmd_msg.yaw.data = angles[0]
+        # cmd_msg.pitch.data = angles[1]
+        # cmd_msg.roll.data = angles[2]
 
-        hb_0.publish(cmd_msg)
-        hb_1.publish(cmd_msg)
-        hb_2.publish(cmd_msg)
-        hb_3.publish(cmd_msg)
+        # hb_0.publish(cmd_msg)
+        # hb_1.publish(cmd_msg)
+        # hb_2.publish(cmd_msg)
+        # hb_3.publish(cmd_msg)
+
+        publish_cmd(hb_0, required_thrust_vector + np.array([0, 0, hb_0_z]))
+        publish_cmd(hb_1, required_thrust_vector + np.array([0, 0, hb_1_z]))
+        publish_cmd(hb_2, required_thrust_vector + np.array([0, 0, hb_2_z]))
+        publish_cmd(hb_3, required_thrust_vector + np.array([0, 0, hb_3_z]))
 
         rate.sleep()
